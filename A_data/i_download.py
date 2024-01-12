@@ -7,8 +7,8 @@ def download(symbol, timeframe, start, end):
     name = f'{symbol.replace("/", ":")}_{timeframe}_{start}_{end}'
     
     # if cache exist, load and finsh.
-    if os.path.exists(cache_dir / (name + '.pkl')):
-        return pd.read_pickle(cache_dir / (name + '.pkl')), name
+    if os.path.exists(raw_data/ (name + '.pkl')):
+        return pd.read_pickle(raw_data/ (name + '.pkl')), name
     
     # create binance object
     binance = ccxt.binance()  
@@ -62,10 +62,9 @@ def download(symbol, timeframe, start, end):
     # process the data
     df = pd.DataFrame(ohlcv, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Time'] = [datetime.fromtimestamp(float(time)/1000) for time in df['Time']]
-    df.set_index('Time', inplace=True)
     
     #save the cache
-    df.to_pickle(cache_dir / (name + '.pkl'))
+    df.to_pickle(raw_data/ (name + '.pkl'))
 
     return df, name
 
@@ -79,4 +78,5 @@ if __name__ == "__main__" :
     
     #display
     print(df.head())
+    print(df.info())
     print(name)

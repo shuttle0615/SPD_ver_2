@@ -14,5 +14,10 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 
 import pytorch_lightning as pl
 
-cache_dir = Path('/home/kyuholee/SPD_ver_2/C_cache')
-cache_dir.mkdir(parents=True, exist_ok=True)
+root = '/home/kyuholee/SPD_ver_2/C_cache'
+
+raw_data = Path(root) / 'raw_data'
+raw_data.mkdir(parents=True, exist_ok=True)
+
+processed_data = Path(root) / 'processed_data'
+processed_data.mkdir(parents=True, exist_ok=True)

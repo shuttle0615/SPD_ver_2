@@ -4,3 +4,4 @@
 4. pytorch lightning
 5. git
 6. pip install torchsampler
+7. ccxt
