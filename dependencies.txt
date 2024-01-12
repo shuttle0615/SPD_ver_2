@@ -1,0 +1,4 @@
+1. pandas
+2. sklearn
+3. talib
+4. pytorch lightning
