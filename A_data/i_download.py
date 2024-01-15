@@ -1,4 +1,5 @@
 from __init__ import *
+from ii_technical_indicator import technical_indicator
 
 def download(symbol, timeframe, start, end):
     '''
@@ -42,6 +43,7 @@ def download(symbol, timeframe, start, end):
     num_unit_time = diff // unit_time
 
     # only 1000 data points are available per requrest
+    print("start downloading")
     if num_unit_time > 1000 :
         # over 1000 data points
 
@@ -50,7 +52,7 @@ def download(symbol, timeframe, start, end):
 
         ohlcv = []
 
-        for i in range(repeat):
+        for i in tqdm(range(repeat)):
             ohlcv = ohlcv + binance.fetch_ohlcv(symbol=symbol, timeframe=timeframe, since=(startTime + i*unit_time*1000), limit=1000)
 
         ohlcv = ohlcv + binance.fetch_ohlcv(symbol=symbol, timeframe=timeframe, since=(startTime + repeat*unit_time*1000), limit=leftover)    
@@ -62,6 +64,9 @@ def download(symbol, timeframe, start, end):
     # process the data
     df = pd.DataFrame(ohlcv, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Time'] = [datetime.fromtimestamp(float(time)/1000) for time in df['Time']]
+    
+    # add technical indicator
+    df = technical_indicator(df)
     
     #save the cache
     df.to_pickle(raw_data/ (name + '.pkl'))

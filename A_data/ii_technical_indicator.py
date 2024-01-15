@@ -22,7 +22,7 @@ def technical_indicator(data):
     # date related
     data['DayOfWeek'] = pd.to_datetime(data['Time']).dt.dayofweek
     data['Month'] = pd.to_datetime(data['Time']).dt.month
-    data['Hourly'] = pd.to_datetime(data['Time']).dt.hour / 4
+    data['Hourly'] = pd.to_datetime(data['Time']).dt.hour
     
     # find pattern
     data['CDL2CROWS'] = talib.CDL2CROWS(data['Open'], data['High'], data['Low'], data['Close']) / 100
@@ -88,12 +88,10 @@ if __name__ == "__main__" :
     from i_download import download
     # get data from cache
     df, name = download("BTC/USDT", '1h', (2022, 1, 10, 1), (2022, 1, 12, 2))
-    
-    # process
-    new_df = technical_indicator(df)
+    # alread integrated
     
     # print
-    print(new_df.head())
-    print(new_df.info())
+    print(df.head())
+    print(df.info())
     
     
