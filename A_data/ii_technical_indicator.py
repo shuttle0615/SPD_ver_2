@@ -1,4 +1,4 @@
-from __init__ import *
+from A_data import *
 
 def technical_indicator(data):
     '''

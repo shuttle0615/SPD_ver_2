@@ -1,5 +1,4 @@
-from __init__ import *
-from ii_technical_indicator import technical_indicator
+from A_data import *
 
 def download(symbol, timeframe, start, end):
     '''
@@ -9,6 +8,7 @@ def download(symbol, timeframe, start, end):
     
     # if cache exist, load and finsh.
     if os.path.exists(raw_data/ (name + '.pkl')):
+        print(f'{name} : data already exist')
         return pd.read_pickle(raw_data/ (name + '.pkl')), name
     
     # create binance object
