@@ -86,6 +86,44 @@ def per_window_process(df, name, x_frames, y_frames, rev):
     
     return new_df, new_name
 
+def simple_labeling(df, name, x_frames, y_frames, rev):
+    # drop all n/a
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df = df.dropna()
+    
+    # compute alpha and beta from pct_change
+    intl_hold = 0.85  # marks the threshold of hold strip
+    intl_buy_sell = 0.997  # marks the buy/sell upper/lower limits
+    alpha = df["pct_change"].abs().quantile(intl_hold)
+    beta = df["pct_change"].abs().quantile(intl_buy_sell)  # to ignore the outliers in the beta computation
+    
+    # funcition to check label
+    def check_label(z):
+        if (abs((z['s-1'] - z['Close_MA']) / z['Close_MA']) > z['alpha']) and \
+                (abs((z['s-1'] - z['Close_MA']) / z['Close_MA']) < (z['beta'])):
+            if z['s-1'] > z['Close_MA']:
+                return -1
+            elif z['s-1'] < z['Close_MA']:
+                return 1
+            else:
+                return 0
+        else:
+            return 0
+    
+    
+    # put labels to df
+    x = df.copy()
+    x['Close_MA'] = x['Close'].ewm(span=x_frames).mean()
+    x['s-1'] = x['Close'].shift(-1 * y_frames)
+    x['alpha'] = alpha
+    x['beta'] = beta * (1 + (y_frames * 0.1))
+    x['label'] = x.apply(check_label, axis=1)
+    df['label'] = x['label']
+    
+    # drop time, OHLCV data
+    df = df.drop(columns=['Time', 'Open', 'High', 'Low', 'Close', 'Volume'])
+    
+    return df, name
 
 if __name__ == "__main__" : 
     from i_download import download

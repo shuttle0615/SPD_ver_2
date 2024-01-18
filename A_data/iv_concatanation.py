@@ -21,14 +21,23 @@ list_of_coin = df_good["symbol"].values.tolist()
 
 def concatanation(arg):
     # if train, validation, test already exist, load them.
-    if os.path.exists(Path(root) / 'train_dataset.pkl') and \
-        os.path.exists(Path(root) / 'validation_dataset.pkl') and \
-        os.path.exists(Path(root) / 'test_dataset.pkl'):
+    if os.path.exists(Path(root) / f'train_dataset_{arg["start"]}_{arg["end"]}.pkl') and \
+        os.path.exists(Path(root) / f'validation_dataset_{arg["start"]}_{arg["end"]}.pkl') and \
+        os.path.exists(Path(root) / f'test_dataset_{arg["start"]}_{arg["end"]}.pkl'):
         print('datas already exist')
         
-        train_dataset = pd.read_pickle(Path(root) / 'train_dataset.pkl')
-        validation_dataset = pd.read_pickle(Path(root) / 'validation_dataset.pkl')
-        test_dataset = pd.read_pickle(Path(root) / 'test_dataset.pkl')
+        start_time = time.time()
+        test_dataset = pd.read_pickle(Path(root) / f'test_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'test set ready : {time.time() - start_time}')
+        
+        start_time = time.time()
+        validation_dataset = pd.read_pickle(Path(root) / f'validation_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'validation set ready : {time.time() - start_time}')
+        
+        start_time = time.time()
+        train_dataset = pd.read_pickle(Path(root) / f'train_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'train set ready : {time.time() - start_time}')
+        
         
         return train_dataset, validation_dataset, test_dataset
     
@@ -44,6 +53,9 @@ def concatanation(arg):
         # process data
         pr_df, _ = per_window_process(df, name, arg['x_frame'], arg['y_frame'], arg['revenue'])
         
+        # shuffle data
+        pr_df = pr_df.sample(frac=1).reset_index(drop=True)
+        
         # devide data into train, validaition, test
         last = len(pr_df)
         idx1 = int(last * arg["data ratio"][0])
@@ -57,16 +69,72 @@ def concatanation(arg):
         ls_test.append(pr_df.iloc[idx2:last])
     
     train_dataset = pd.concat(ls_train, ignore_index=True)
-    train_dataset.to_pickle(Path(root) / 'train_dataset.pkl')
+    train_dataset.to_pickle(Path(root) / f'train_dataset_{arg["start"]}_{arg["end"]}.pkl')
     
     validation_dataset = pd.concat(ls_validation, ignore_index=True)
-    validation_dataset.to_pickle(Path(root) / 'validation_dataset.pkl')
+    validation_dataset.to_pickle(Path(root) / f'validation_dataset_{arg["start"]}_{arg["end"]}.pkl')
     
     test_dataset = pd.concat(ls_test, ignore_index=True)
-    test_dataset.to_pickle(Path(root) / 'test_dataset.pkl')
+    test_dataset.to_pickle(Path(root) / f'test_dataset_{arg["start"]}_{arg["end"]}.pkl')
 
     return train_dataset, validation_dataset, test_dataset
 
+def simple_concatanation(arg):
+    # if train, validation, test already exist, load them.
+    if os.path.exists(Path(root) / f'simpe_train_dataset_{arg["start"]}_{arg["end"]}.pkl') and \
+        os.path.exists(Path(root) / f'simple_validation_dataset_{arg["start"]}_{arg["end"]}.pkl') and \
+        os.path.exists(Path(root) / f'simple_test_dataset_{arg["start"]}_{arg["end"]}.pkl'):
+        print('datas already exist')
+        
+        start_time = time.time()
+        test_dataset = pd.read_pickle(Path(root) / f'simple_test_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'test set ready : {time.time() - start_time}')
+        
+        start_time = time.time()
+        validation_dataset = pd.read_pickle(Path(root) / f'simple_validation_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'validation set ready : {time.time() - start_time}')
+        
+        start_time = time.time()
+        train_dataset = pd.read_pickle(Path(root) / f'simple_train_dataset_{arg["start"]}_{arg["end"]}.pkl')
+        print(f'train set ready : {time.time() - start_time}') 
+    
+        return train_dataset, validation_dataset, test_dataset
+    
+    # download all data for each symbol
+    ls_train = []
+    ls_validation = []
+    ls_test = []
+    
+    for sym in arg['coin list']:
+        print(f'downloading {sym} data')
+        # download data
+        df, name = download(sym, arg['timeframe'], arg['start'], arg['end'])
+        # process data
+        pr_df, _ = simple_labeling(df, name, arg['x_frame'], arg['y_frame'], arg['revenue'])
+        
+        # devide data into train, validaition, test
+        last = len(pr_df)
+        idx1 = int(last * arg["data ratio"][0])
+        idx2 = int(last * arg["data ratio"][1])
+        
+        print("train appending")
+        ls_train.append(pr_df.iloc[0:idx1])
+        print("validation appending")
+        ls_validation.append(pr_df.iloc[idx1:idx2])
+        print("test appending")
+        ls_test.append(pr_df.iloc[idx2:last])
+    
+    train_dataset = pd.concat(ls_train, ignore_index=True)
+    train_dataset.to_pickle(Path(root) / f'simple_train_dataset_{arg["start"]}_{arg["end"]}.pkl')
+    
+    validation_dataset = pd.concat(ls_validation, ignore_index=True)
+    validation_dataset.to_pickle(Path(root) / f'simple_validation_dataset_{arg["start"]}_{arg["end"]}.pkl')
+    
+    test_dataset = pd.concat(ls_test, ignore_index=True)
+    test_dataset.to_pickle(Path(root) / f'simple_test_dataset_{arg["start"]}_{arg["end"]}.pkl')
+
+    return train_dataset, validation_dataset, test_dataset    
+    
     
 if __name__ == "__main__" : 
     

@@ -1,3 +1,5 @@
+from typing import Any
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 from B_model import *
 
 class MaskedMultiheadAttention(nn.Module):
@@ -154,7 +156,10 @@ class TransformerModule(LightningModule):
     def __init__(self, args):
         super().__init__()
         self.args = args
+        self.lr = self.args["lr"]
         self.transformer = TransformerEncoder(self.args)
+        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=3)
+        self.F1 = torchmetrics.F1Score(task="multiclass", num_classes=3)
         self.save_hyperparameters()
         
     def forward(self, inputs):
@@ -165,7 +170,10 @@ class TransformerModule(LightningModule):
         output = self.transformer(inputs)
         loss = torch.nn.functional.cross_entropy(output, target)
         
-        self.log("train/loss", loss)
+        accuracy = self.accuracy(output, target)
+        F1 = self.F1(output, target)
+        
+        self.log_dict({"loss":loss, "accuracy":accuracy, "F1":F1})
         return loss
     
     def validation_step(self, batch, batch_idx):
@@ -173,9 +181,42 @@ class TransformerModule(LightningModule):
         output = self.transformer(inputs)
         val_loss = torch.nn.functional.cross_entropy(output, target)
         
-        self.log("validation/loss", val_loss)
+        val_accuracy = self.accuracy(output, target)
+        val_F1 = self.F1(output, target)
+        
+        self.log_dict({"validation_loss":val_loss, "validation_accuracy":val_accuracy, "val_F1":val_F1}, sync_dist=True)
+        return val_loss, val_accuracy
     
+    def test_step(self, batch, batch_idx):
+        inputs, target = batch
+        output = self.transformer(inputs)
+        test_loss = torch.nn.functional.cross_entropy(output, target)
+        
+        test_accuracy = self.accuracy(output, target)
+        test_F1 = self.F1(output, target)
+        
+        self.log_dict({"test_loss":test_loss, "test_accuracy":test_accuracy, "test_F1":test_F1}, sync_dist=True)
+        
     
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args["lr"])
-        return optimizer
+        optimizer = torch.optim.Adam(self.transformer.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=1, 
+            threshold=0.001, 
+            threshold_mode='rel', 
+            cooldown=0, 
+            min_lr=0.00001,
+            verbose=True)
+        
+        return {
+            'optimizer': optimizer,
+            'lr_scheduler': {
+                'scheduler': scheduler,
+                'interval': 'epoch',
+                'frequency': 1,
+                'monitor': 'validation_loss',
+                'strict': True,
+            }
+        }

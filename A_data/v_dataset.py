@@ -19,4 +19,9 @@ class StockDataset(Dataset):
     
     def gettime(self, idx):
         return self.all_time[idx]
+    
+    def get_labels(self):
+        return self.all_y
 
+class simpleDataset(Dataset):
+    pass

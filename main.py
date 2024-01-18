@@ -1,49 +1,37 @@
-import pandas as pd
+from A_data import dataloader
+from B_model import train
 
-from torch.utils.data import DataLoader
-from torchsampler import ImbalancedDatasetSampler
+data_args = {
+    'label' : 2,     
+    'coin list': ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BNB/USDT'], 
+    'timeframe': '5m', 
+    'start': (2020, 1, 1, 10), 
+    'end': (2020, 7, 1, 10),
+    
+    'x_frame': 100, 
+    'y_frame': 5, 
+    'revenue': 0.015, 
+    
+    'data ratio': [0.7, 0.9],
+    
+    'batch size': 100
+}
 
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
+tr, va, te = dataloader(data_args)
 
-from A_data import data_args, data_exp_args
-from A_data import StockDataset
-from A_data import concatanation
+# 0.0005, 0.0004, 0.0003, 0.0002, 0.0001
+for lr in [0.0005, 0.0004, 0.0003, 0.0002, 0.0001]:
+    args = {
+        "nhid_tran" : 256, #model
+        "nhead" : 16, #model
+        "nlayers_transformer" : 8, #model
+        "attn_pdrop" : 0.1, #model
+        "resid_pdrop" : 0.1, #model
+        "embd_pdrop" : 0.1, #model
+        "nff" : 4 * 256, #model
+        
+        "epoch": 10,
+        "lr": lr
+    }
 
-from B_model import model_args
-from B_model import TransformerModule
-
-# download all data
-train, validation, test = concatanation(data_args)
-#train, validation, test = concatanation(data_exp_args)
-# create dataset
-train_dataset = StockDataset(train)
-validation_dataset = StockDataset(validation)
-test_dataset = StockDataset(test)
-
-# create dataloader 
-train_dataloader = DataLoader(train_dataset, batch_size=data_exp_args['batch size'], sampler=ImbalancedDatasetSampler(train_dataset)) 
-validation_dataloader = DataLoader(validation_dataset, batch_size=data_exp_args['batch size'], sampler=ImbalancedDatasetSampler(validation_dataset)) 
-test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-# define module 
-transformer = TransformerModule(model_args)
-
-# train - grid search?
-result_root = "/home/kyuholee/SPD_ver_2/D_result"
-
-wandb_logger = WandbLogger(project="Stock Prediction", log_model="all", save_dir=result_root)
-trainer = pl.Trainer(devices="auto", 
-    accelerator="auto", 
-    max_epochs=10,
-    log_every_n_steps=10,
-    logger=wandb_logger, 
-    default_root_dir=result_root)
-
-trainer.fit(model=transformer, train_dataloaders=train_dataloader, val_dataloaders=validation_dataloader)
-
-
-
-
-# 
-
+    train(args, tr, va, te)
