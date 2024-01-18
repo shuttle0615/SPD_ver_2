@@ -1,4 +1,18 @@
-from A_data import *
+from .ii_technical_indicator import technical_indicator
+
+import os
+import pandas as pd
+import ccxt 
+from tqdm import tqdm
+
+from pathlib import Path
+from datetime import datetime
+
+root = '/home/kyuholee/SPD_ver_2/C_cache'
+
+raw_data = Path(root) / "raw"
+raw_data.mkdir(parents=True, exist_ok=True)
+
 
 def download(symbol, timeframe, start, end):
     '''

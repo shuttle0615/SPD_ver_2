@@ -1,4 +1,5 @@
-from A_data import *
+import talib
+import pandas as pd
 
 def technical_indicator(data):
     '''

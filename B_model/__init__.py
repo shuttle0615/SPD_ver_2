@@ -17,5 +17,5 @@ from torchmetrics import Metric
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-from .i_transformer import TransformerModule 
-from .train import train
+from .ii_transformer import TransformerModule 
+from .i_train import train
