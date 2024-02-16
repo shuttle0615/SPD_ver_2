@@ -11,7 +11,7 @@ def technical_indicator(data):
     upper_band, _, lower_band = talib.BBANDS(data['Close'], nbdevup=2, nbdevdn=2, matype=0)
     data['boll'] = ((data['Close'] - lower_band) / (upper_band - lower_band))
     data['ULTOSC'] = ((talib.ULTOSC(data['High'], data['Low'], data['Close'])) / 100)
-    data['pct_change'] = (data['Close'].pct_change())
+    #data['pct_change'] = (data['Close'].pct_change())
     data['zsVol'] = (data['Volume'] - data['Volume'].mean()) / data['Volume'].std()
     data['PR_MA_Ratio_short'] = \
         ((data['Close'] - talib.SMA(data['Close'], 21)) / talib.SMA(data['Close'], 21))
@@ -27,7 +27,7 @@ def technical_indicator(data):
     data['Hourly'] = pd.to_datetime(data['Time']).dt.hour
     
     # find pattern
-    data['CDL2CROWS'] = talib.CDL2CROWS(data['Open'], data['High'], data['Low'], data['Close']) / 100
+    '''data['CDL2CROWS'] = talib.CDL2CROWS(data['Open'], data['High'], data['Low'], data['Close']) / 100
     data['CDL3BLACKCROWS'] = talib.CDL3BLACKCROWS(data['Open'], data['High'], data['Low'], data['Close']) / 100
     # data['CDL3INSIDE'] = talib.CDL3INSIDE(data['Open'], data['High'], data['Low'], data['Close']) / 100
     # data['CDL3OUTSIDE'] = talib.CDL3OUTSIDE(data['Open'], data['High'], data['Low'], data['Close']) / 100
@@ -81,13 +81,13 @@ def technical_indicator(data):
     # data['CDLTRISTAR'] = talib.CDLTRISTAR(data['Open'], data['High'], data['Low'], data['Close']) / 100
     # data['CDLUNIQUE3RIVER'] = talib.CDLUNIQUE3RIVER(data['Open'], data['High'], data['Low'], data['Close']) / 100
     data['CDLUPSIDEGAP2CROWS'] = talib.CDLUPSIDEGAP2CROWS(data['Open'], data['High'], data['Low'], data['Close']) / 100
-    # data['CDLXSIDEGAP3METHODS'] = talib.CDLXSIDEGAP3METHODS(data['Open'], data['High'], data['Low'], data['Close']) / 100
+    # data['CDLXSIDEGAP3METHODS'] = talib.CDLXSIDEGAP3METHODS(data['Open'], data['High'], data['Low'], data['Close']) / 100'''
 
     return data
 
 
 if __name__ == "__main__" : 
-    from i_download import download
+    from .i_download import download
     # get data from cache
     df, name = download("BTC/USDT", '1h', (2022, 1, 10, 1), (2022, 1, 12, 2))
     # alread integrated

@@ -14,12 +14,10 @@ root = '/home/kyuholee/SPD_ver_2/C_cache'
 label_data = Path(root) / "label"
 label_data.mkdir(parents=True, exist_ok=True)
 
-def r_value_calc(df, x_frame):
-    
-    df_y = df.iloc[x_frame:]
+def r_value_calc(df):
 
-    open = df_y['Open'].iloc[0]
-    close = df_y['Close'].iloc[-1]
+    open = df['Open'].iloc[0]
+    close = df['Close'].iloc[-1]
     
     return (close - open)/open
 
@@ -94,7 +92,7 @@ class newStockDataset(Dataset):
         coin_index = 0
         data_idx = idx 
         for i, l in enumerate(self.cumulative_length):
-            if idx > l:
+            if idx >= l:
                 coin_index = i + 1
                 data_idx = idx - l
         
@@ -106,45 +104,48 @@ class newStockDataset(Dataset):
         
         # create window
         window = data.iloc[data_idx-self.arg['x_frame']:data_idx+self.arg['y_frame']].copy(deep=True) 
-        ohlcv = window[['High', 'Low', 'Open', 'Close', 'Volume']]
-        
-        # compute return value 
-        ret = r_value_calc(ohlcv, self.arg['x_frame'])
-        
-        # normalization
-        ohlcv = ohlcv.apply(lambda x: np.log((x+1)) - np.log(x.iloc[self.arg['x_frame']-1]+1))
-        #ohlcv = ohlcv.apply(lambda x: (np.log(x+1) - np.log(x+1).mean())/ (np.log(x+1).std()))
-        window.loc[:,['High', 'Low', 'Open', 'Close', 'Volume']] = ohlcv 
-        
-        # isolate time
-        time = window['Time'].iloc[self.arg['x_frame']]
-        window = window.drop(columns=['Time'])
         
         # divide X and y 
-        X = window[:self.arg['x_frame']].values.tolist()
-        y = window[self.arg['x_frame']:].values.tolist()
+        X = window[:self.arg['x_frame']]
+        y = window[self.arg['x_frame']:]
         
-        return X, y, ret, time
+        # compute return value on y
+        ret = r_value_calc(y)
+        
+        # make y numpy
+        y = y.drop(columns=['Time'])
+        y = y.values
+        
+        # normalize X
+        ohlcv = X[['High', 'Low', 'Open', 'Close', 'Volume']]
+        ohlcv = ohlcv.apply(lambda x: np.log((x+1)) - np.log(x.iloc[self.arg['x_frame']-1]+1))
+        #ohlcv = ohlcv.apply(lambda x: (np.log(x+1) - np.log(x+1).mean())/ (np.log(x+1).std()))
+        X.loc[:,['High', 'Low', 'Open', 'Close', 'Volume']] = ohlcv 
+        
+        # isolate time from X
+        X = X.drop(columns=['Time'])
+        X = X.values
+        
+        return X, y, ret
 
     def __getitem__(self, idx):
-        X, _, r, t = self.__perWindow__(idx)
+        X, y, r = self.__perWindow__(idx)
         
         if self.arg['label'] == 1:
-            y = self.label_1[idx]
+            label = self.label_1[idx]
         elif self.arg['label'] == 2:
-            y = self.label_2[idx]
+            label = self.label_2[idx]
         
-        return X, y
-    
-    def __gettime__(self, idx):
-        X, _, r, t = self.__perWindow__(idx)
-        return t
+        return torch.FloatTensor(X), torch.FloatTensor(y), torch.tensor(label, dtype=torch.int64)
     
     def get_labels(self):
         if self.arg['label'] == 1:
             return self.label_1
         elif self.arg['label'] == 2:
             return self.label_2
+
+# create dataset for original paper -> just return a line of data, processed to have
+# label, and no OHLCV, Time. 
 
 if __name__ == "__main__" : 
     
@@ -158,8 +159,6 @@ if __name__ == "__main__" :
     'x_frame': 100, 
     'y_frame': 5, 
     'revenue': 0.015, 
-    
-    'data ratio': [0.7, 0.9],
     
     'batch size': 100
     }

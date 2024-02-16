@@ -54,14 +54,19 @@ tr = newStockDataset(train_data_args)
 va = newStockDataset(validation_data_args)
 te = newStockDataset(test_data_args)
 
-train_dataloader = DataLoader(tr, batch_size=train_data_args['batch size'], sampler=ImbalancedDatasetSampler(tr), num_workers=4) 
-validation_dataloader = DataLoader(va, batch_size=validation_data_args['batch size'], sampler=ImbalancedDatasetSampler(va), num_workers=4) 
+train_dataloader = DataLoader(tr, batch_size=train_data_args['batch size'], sampler=ImbalancedDatasetSampler(tr), num_workers=10) 
+validation_dataloader = DataLoader(va, batch_size=validation_data_args['batch size'], sampler=ImbalancedDatasetSampler(va), num_workers=10) 
 test_dataloader = DataLoader(te, batch_size=1, shuffle=False)
 
-'''
+
 # 0.0005, 0.0004, 0.0003, 0.0002, 0.0001
 for lr in [0.0005, 0.0004, 0.0003, 0.0002, 0.0001]:
     args = {
+        
+        'revenue' : 0.015,
+        'stop_loss' : 0.01,
+        'label' : 1,
+        
         "nhid_tran" : 256, #model
         "nhead" : 16, #model
         "nlayers_transformer" : 8, #model
@@ -74,5 +79,4 @@ for lr in [0.0005, 0.0004, 0.0003, 0.0002, 0.0001]:
         "lr": lr
     }
 
-    train(args, tr, va, te)
-'''
+    train(args, train_dataloader, validation_dataloader, test_dataloader)

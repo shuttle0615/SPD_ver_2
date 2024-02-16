@@ -1,11 +1,24 @@
-from B_model import *
+import wandb
+
+import pytorch_lightning as pl
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+from .ii_transformer import TransformerModule
+from .iii_callback import ROI
+
+
 
 def train(args, train_dataloader, validation_dataloader, test_dataloader):
     # define module 
-    transformer = TransformerModule(args)
+    transformer = TransformerModule(args) # make it as argment.
 
     # train - grid search?
     result_root = "/home/kyuholee/SPD_ver_2/D_result"
+
+    # create callback for ROI 
+    # ho does pytorch go through the test dataset? by order? or if it is not in order, how can i compute ROI? 
+    ROI_callback = ROI()
 
     # callback for ckpt
     checkpoint_callback = ModelCheckpoint(
@@ -28,7 +41,7 @@ def train(args, train_dataloader, validation_dataloader, test_dataloader):
         log_every_n_steps=10,
         logger=wandb_logger, 
         default_root_dir=result_root,
-        callbacks=[checkpoint_callback])
+        callbacks=[checkpoint_callback, ROI_callback])
 
     # auto lr finder
     #tuner = Tuner(trainer)

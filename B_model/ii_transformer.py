@@ -1,6 +1,17 @@
 from typing import Any
 from pytorch_lightning.utilities.types import STEP_OUTPUT
-from B_model import *
+
+import torch
+import torch.nn as nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+import numpy as np
+
+from pytorch_lightning import LightningModule
+
+import torchmetrics
+
+MAX_LEN = 100
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 class MaskedMultiheadAttention(nn.Module):
     """
@@ -111,6 +122,7 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         # DO NOT MODIFY
+        # 1 -> 0 but why?
         return x + self.pe[:x.shape[1]]
 
 class TransformerEncoder(nn.Module):
@@ -118,7 +130,7 @@ class TransformerEncoder(nn.Module):
     def __init__(self, args):
         super(TransformerEncoder, self).__init__()
         # input embedding stem
-        self.tok_emb = nn.Linear(39, args["nhid_tran"]) #ohlev encoding
+        self.tok_emb = nn.Linear(16, args["nhid_tran"]) #ohlev encoding
         self.pos_enc = PositionalEncoding(args)
         self.dropout = nn.Dropout(args["embd_pdrop"])
         # transformer
@@ -166,7 +178,8 @@ class TransformerModule(LightningModule):
         return self.transformer(inputs)
     
     def training_step(self, batch, batch_idx):
-        inputs, target = batch
+        # can i get y values here? if so, it can compute ROI 
+        inputs, _, target = batch
         output = self.transformer(inputs)
         loss = torch.nn.functional.cross_entropy(output, target)
         
@@ -177,7 +190,7 @@ class TransformerModule(LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        inputs, target = batch
+        inputs, _, target = batch
         output = self.transformer(inputs)
         val_loss = torch.nn.functional.cross_entropy(output, target)
         
@@ -188,7 +201,7 @@ class TransformerModule(LightningModule):
         return val_loss, val_accuracy
     
     def test_step(self, batch, batch_idx):
-        inputs, target = batch
+        inputs, y, target = batch
         output = self.transformer(inputs)
         test_loss = torch.nn.functional.cross_entropy(output, target)
         
@@ -197,6 +210,8 @@ class TransformerModule(LightningModule):
         
         self.log_dict({"test_loss":test_loss, "test_accuracy":test_accuracy, "test_F1":test_F1}, sync_dist=True)
         
+        return output
+    
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.transformer.parameters(), lr=self.lr)
